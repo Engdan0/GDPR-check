@@ -18,6 +18,7 @@
 
 # Приклад результату
 Тест 1:
+```
 --- GDPR Language Compliance Report ---
 {
     "url": "https://ecampus.kpi.ua/uk",
@@ -27,8 +28,9 @@
     "geo_location_script": false,
     "consent_banner_found": false
 }
-
+```
 Тест 2:
+```
 --- GDPR Language Compliance Report ---
 {
     "url": "https://www.reddit.com/",
@@ -38,8 +40,9 @@
     "geo_location_script": true,
     "consent_banner_found": false
 }
-
+```
 Тест 3:
+```
 --- GDPR Language Compliance Report ---
 {
     "url": "https://soundcloud.com/discover",
@@ -49,3 +52,4 @@
     "geo_location_script": true,
     "consent_banner_found": false
 }
+```
