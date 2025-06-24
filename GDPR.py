@@ -1,13 +1,16 @@
-import requests 
-from bs4 import BeautifulSoup 
-from langdetect import detect, DetectorFactory 
+import requests
+from bs4 import BeautifulSoup
+from langdetect import detect, DetectorFactory
 import re
+import json
+from datetime import datetime
 
-DetectorFactory.seed = 0  # For consistent language detection results
+DetectorFactory.seed = 0  # стабільний результат
 
 def audit_page_language_compliance(url):
     report = {
         'url': url,
+        'timestamp': datetime.utcnow().isoformat() + 'Z',
         'html_lang_attr': '',
         'detected_language': '',
         'geo_location_script': False,
@@ -22,14 +25,11 @@ def audit_page_language_compliance(url):
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 1. Check <html lang="">
+        # 1. <html lang="">
         html_tag = soup.find('html')
-        if html_tag and html_tag.has_attr('lang'):
-            report['html_lang_attr'] = html_tag['lang']
-        else:
-            report['html_lang_attr'] = 'not set'
+        report['html_lang_attr'] = html_tag.get('lang', 'not set') if html_tag else 'not found'
 
-        # 2. Detect language from visible text
+        # 2. Виявлення мови тексту
         text = soup.get_text(separator=' ', strip=True)
         text = re.sub(r'\s+', ' ', text)
         try:
@@ -37,26 +37,29 @@ def audit_page_language_compliance(url):
         except:
             report['detected_language'] = 'undetected'
 
-        # 3. Search for geo-targeting scripts
+        # 3. Геолокаційні скрипти
         script_text = " ".join([script.get('src', '') + script.text for script in soup.find_all('script')])
         if re.search(r'geo|ipinfo|location|ip-api|geolocation|country', script_text, re.I):
             report['geo_location_script'] = True
 
-        # 4. Check for cookie/consent banners
+        # 4. Пошук банера згоди
         banner_text = text.lower()
-        if 'cookie' in banner_text or 'gdpr' in banner_text or 'consent' in banner_text:
+        if any(keyword in banner_text for keyword in ['cookie', 'consent', 'gdpr']):
             report['consent_banner_found'] = True
 
-        # Output result
+        # Виведення
         print("--- GDPR Language Compliance Report ---")
-        for key, value in report.items():
-            print(f"{key}: {value}")
+        print(json.dumps(report, indent=4, ensure_ascii=False))
+
+        # Збереження у JSON-файл
+        with open('gdpr_audit_report.json', 'w', encoding='utf-8') as f:
+            json.dump(report, f, indent=4, ensure_ascii=False)
 
     except Exception as e:
         print("Error:", e)
 
-# Example usage
+# Запуск
 if __name__ == "__main__":
     import sys
-    url = sys.argv[1] if len(sys.argv) > 1 else 'https://example.com'
+    url = sys.argv[1] if len(sys.argv) > 1 else ''
     audit_page_language_compliance(url)
